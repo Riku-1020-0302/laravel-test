@@ -1,58 +1,112 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 簡易CRM（顧客管理 × タスク管理）
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+顧客情報と、顧客ごとのタスクを一元管理できる、Laravel製のWebアプリケーションです。
+ポートフォリオ（実績）として制作しました。
 
-## About Laravel
+## スクリーンショット
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| 顧客一覧 | 顧客詳細（タスク管理） |
+| --- | --- |
+| ![顧客一覧](docs/screenshots/customers-index.png) | ![顧客詳細](docs/screenshots/customers-show.png) |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 主な機能
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **ログイン / 新規登録 / ログアウト**（Laravel Breeze）
+- **顧客管理（CRUD）**：顧客名・会社名・メール・電話の登録、一覧、詳細、編集、削除
+- **顧客の検索**：名前・会社名・メールアドレスで絞り込み
+- **タスク管理**：顧客詳細画面からタスクを追加・編集・削除
+  - ステータス：未対応 / 対応中 / 完了
+  - 期限切れの未完了タスクを赤字で強調
+- **一覧画面で未完了タスク数を表示**
+- **アクセス制限**：ログイン中のユーザーは自分が登録した顧客・タスクのみ閲覧・操作可能（Policyで制御）
+- **レスポンシブ対応**（Tailwind CSS）
 
-## Learning Laravel
+## 使用技術
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| 項目 | 内容 |
+| --- | --- |
+| バックエンド | PHP / Laravel 11 |
+| 認証 | Laravel Breeze（Blade） |
+| フロントエンド | Blade / Tailwind CSS / Vite |
+| データベース | SQLite（MySQLへの切り替えも可能） |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 設計のポイント
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- **ステータスはEnumで管理**：`TaskStatus`（PHP 8.1のbacked enum）に値と日本語ラベルを集約し、画面・バリデーション・DB保存で同じ定義を使用
+- **認可はPolicyで実装**：`CustomerPolicy` / `TaskPolicy` により、URLを直接指定しても他ユーザーのデータは開けない
+- **N+1を避けた一覧**：未完了タスク数は `withCount` でまとめて取得
+- **共通化**：顧客の入力フォームやステータスバッジはBladeコンポーネント・部分テンプレートに切り出し
 
-## Agentic Development
+## ER図
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+users 1 ──< customers 1 ──< tasks
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+- `customers.user_id` → `users.id`
+- `tasks.customer_id` → `customers.id`（顧客削除時はタスクも削除）
 
-## Contributing
+## セットアップ
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+必要環境：PHP 8.2以上 / Composer / Node.js
 
-## Code of Conduct
+```bash
+git clone https://github.com/Riku-1020-0302/laravel-test.git
+cd laravel-test
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+composer install
+npm install
 
-## Security Vulnerabilities
+cp .env.example .env
+php artisan key:generate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+touch database/database.sqlite   # SQLiteを使う場合
+php artisan migrate
 
-## License
+# デモデータ（架空の顧客5件＋タスク）を投入
+php artisan db:seed --class=DemoSeeder
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+起動（ターミナルを2つ使います）
+
+```bash
+npm run dev          # 1つ目
+php artisan serve    # 2つ目
+```
+
+ブラウザで http://localhost:8000 を開いてください。
+
+### デモアカウント
+
+| メールアドレス | パスワード |
+| --- | --- |
+| demo@example.com | password |
+
+※ デモデータの会社名・氏名・連絡先はすべて架空のものです。
+※ 公開環境で使う場合は、`database/seeders/DemoSeeder.php` のパスワードを変更してください。
+
+## ディレクトリ構成（主要部分）
+
+```
+app/
+├── Enums/TaskStatus.php
+├── Http/Controllers/{CustomerController,TaskController}.php
+├── Models/{User,Customer,Task}.php
+└── Policies/{CustomerPolicy,TaskPolicy}.php
+database/
+├── migrations/
+└── seeders/DemoSeeder.php
+resources/views/
+├── customers/   # index, show, create, edit, _form
+├── tasks/       # edit
+└── components/  # status-badge, flash-message
+routes/web.php
+```
+
+## 今後の拡張案
+
+- タスクのステータス絞り込み・並び替え
+- ダッシュボード（期限が近いタスクの一覧）
+- 顧客へのメモ・対応履歴
+- CSVエクスポート
+- Featureテストの追加
